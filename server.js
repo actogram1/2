@@ -17,6 +17,23 @@ const multer = require("multer")
 const app = express()
 const server = http.createServer(app)
 
+const JWT_SECRET = process.env.JWT_SECRET || "actogram_ultra_secure_key_2024_v3"
+// ====== АВТОРИЗАЦИЯ JWT ======
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"]
+  const token = authHeader && authHeader.split(" ")[1]
+  if (!token) {
+    return res.status(401).json({ error: "Нет токена авторизации" })
+  }
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Недействительный токен" })
+    }
+    req.user = user
+    next()
+  })
+}
+
 // Настройка trust proxy для работы за прокси (Render.com)
 app.set('trust proxy', 1)
 
@@ -149,24 +166,7 @@ app.post("/api/create-group", authenticateToken, upload.single("avatar"), async 
 })
 
 // Конфигурация
-const JWT_SECRET = process.env.JWT_SECRET || "actogram_ultra_secure_key_2024_v3"
 const PORT = process.env.PORT || 3001
-
-// ====== АВТОРИЗАЦИЯ JWT ======
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"]
-  const token = authHeader && authHeader.split(" ")[1]
-  if (!token) {
-    return res.status(401).json({ error: "Нет токена авторизации" })
-  }
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: "Недействительный токен" })
-    }
-    req.user = user
-    next()
-  })
-}
 
 // Разрешенные домены
 const allowedOrigins = [
